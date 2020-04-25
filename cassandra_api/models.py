@@ -67,8 +67,8 @@ class Location(models.Model):
 class Plant(models.Model):
     owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     name = models.CharField(max_length=255, blank=False, null=False)
-    type = models.ForeignKey(Type, on_delete=models.CASCADE)
-    location = models.ForeignKey(Location, on_delete=models.CASCADE)
+    type = models.ForeignKey(Type, on_delete=models.CASCADE, related_name='plants')
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='plants')
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(blank=False, null=True, default=None, upload_to='plants')
 

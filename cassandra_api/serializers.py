@@ -36,13 +36,13 @@ class PlantPlainSerializer(serializers.ModelSerializer):
 
 
 class LocationSerializer(serializers.ModelSerializer):
-    plant = PlantSerializer(many=True)
+    plants = PlantSerializer(many=True, read_only=True)
     class Meta:
         model = Location
         fields = '__all__'
 
 class TypeSerializer(serializers.ModelSerializer):
-    plant = PlantSerializer(many=True)
+    plants = PlantSerializer(many=True, read_only=True)
     class Meta:
         model = Type
         fields = '__all__'

@@ -5,9 +5,9 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.decorators import action
-from django.db.models import Q
 from .serializers import *
 from .models import *
+from .services import *
 
 class LoginViewSet(viewsets.ViewSet):
     serializer_class = AuthTokenSerializer
@@ -46,50 +46,24 @@ class TypeViewSet(viewsets.ViewSet):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (TokenAuthentication,)
 
-    def create(self, request):
-        serializer = TypeSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=False):
-            type = Type(name = request.data.get('type_name'), owner= request.user)
-            type.save()
-            return type
-        return None
-
     def list(self, request):
-        types = Type.objects.filter(owner = request.user).prefetch_related('plant')
+        types = TypeService.all(request.user)
         serializer = TypeSerializer(types, many=True)
         return Response({'message': 'Success', 'status': True, 'error': {}, 'data': serializer.data})
 
     def partial_update(self, request, pk= None):
         return Response({'message':'helllo wordl'})
 
-    def get_or_create(self, name, owner):
-        type = Type.objects.filter(Q(name__iexact=name) & Q(owner=owner)).first()
-        if type is None:
-            type = Type(name=name, owner=owner)
-            type.save()
-            return type
-        return type
-
 class LocationViewSet(viewsets.ViewSet):
     serializer_class = LocationSerializer
     permission_classes = (IsAuthenticated,)
     authentication_classes = (TokenAuthentication,)
 
-    def create(self, request):
-        serializer = LocationSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=False):
-            location = Location(name=request.data.get('name'), owner=request.user)
-            location.save()
-            return location
-        return None
+    def list(self, request):
+        locations = LocationService.all(request.user)
+        serializer = LocationSerializer(locations, many=True)
+        return Response({'message': 'Success', 'status': True, 'error': {}, 'data': serializer.data})
 
-    def get_or_create(self, name, owner):
-        location = Location.objects.filter(Q(name__iexact=name) & Q(owner=owner)).first()
-        if location is None:
-            location = Location(name=name, owner=owner)
-            location.save()
-            return location
-        return location
 
 class PlantViewSet(viewsets.ViewSet):
     serializer_class = PlantSerializer
@@ -99,19 +73,30 @@ class PlantViewSet(viewsets.ViewSet):
     def create(self, request):
         serializer = PlantPlainSerializer(data=request.data)
         if serializer.is_valid():
-            location = LocationViewSet().get_or_create(request.data.get('location'), request.user)
-            type = TypeViewSet().get_or_create(request.data.get('type'), request.user)
-            plant = Plant(location = location, type = type, owner= request.user, name = request.data.get('name'),
-                          description=request.data.get('description'), image=request.data.get('image'))
-            plant.save()
+            location = LocationService.get_or_create(request.data.get('location'), request.user)
+            type_plant = TypeService.get_or_create(request.data.get('type'), request.user)
+            plant = PlantService.create_plant(request=request, location=location, type_plant=type_plant)
             serializer = PlantSerializer(plant, many=False)
             return Response({'message':'Success creating plant!', 'status':True, 'error':{} ,'data': serializer.data})
         return Response({'message':'Failed to create plant', 'status':False,'error':serializer.errors, 'data':{} })
 
     def list(self, request):
-        plants = Plant.objects.filter(owner = request.user)
+        plants = PlantService.all(request.user)
         serializer = PlantSerializer(plants, many=True)
-        return Response({'message': 'Here is your plants', 'status':False, 'error':{}, 'data':serializer.data})
+        return Response({'message': 'Here is your plants', 'status':True, 'error':{}, 'data':serializer.data})
 
     def retrieve(self, request, pk=None):
-        pass
+        plant = PlantService.find_by_id(pk)
+        if not plant:
+            return Response({'message':'Data not found', 'status':False, 'error':{}, 'data': {}})
+        serializer = PlantSerializer(plant, many=False)
+        return Response({'message': 'Data not found', 'status': True, 'error': {}, 'data': serializer.data})
+
+    def destroy(self, request, pk=None):
+        plant = PlantService.find_by_id(pk)
+        if not plant:
+            return Response({'message': 'Data not found', 'status': False, 'error': {}, 'data': {}})
+        plant.delete()
+        PlantService.is_location_still_used(plant.location)
+        PlantService.is_type_still_used(plant.type)
+        return Response({'message': 'Success deleted', 'status': True, 'error': {}, 'data': {}})
