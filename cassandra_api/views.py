@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from .serializers import *
 from .models import *
 from .services import *
+from .permissions import *
 
 class LoginViewSet(viewsets.ViewSet):
     serializer_class = AuthTokenSerializer
@@ -43,7 +44,7 @@ class RegisterViewSet(viewsets.ViewSet):
 
 class TypeViewSet(viewsets.ViewSet):
     serializer_class = TypeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,OwnerPermission)
     authentication_classes = (TokenAuthentication,)
 
     def list(self, request):
@@ -56,7 +57,7 @@ class TypeViewSet(viewsets.ViewSet):
 
 class LocationViewSet(viewsets.ViewSet):
     serializer_class = LocationSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,OwnerPermission)
     authentication_classes = (TokenAuthentication,)
 
     def list(self, request):
@@ -67,7 +68,7 @@ class LocationViewSet(viewsets.ViewSet):
 
 class PlantViewSet(viewsets.ViewSet):
     serializer_class = PlantSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,OwnerPermission)
     authentication_classes = (TokenAuthentication,)
 
     def create(self, request):
@@ -107,6 +108,7 @@ class PlantViewSet(viewsets.ViewSet):
             return Response({'message':'Plant not found', 'status':True, 'error':{}, 'data':{}})
         serializer = PlantPlainSerializer(data = request.data)
         if serializer.is_valid():
+            self.check_object_permissions(request, plant)
             PlantService.update_plant(request, plant)
             return Response({'message':'Success update', 'error':{}, 'status':True, 'data':serializer.data })
         return Response({'message':'Failed update', 'status':False, 'error':{}, 'data':{}})
