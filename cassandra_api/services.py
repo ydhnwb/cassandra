@@ -10,6 +10,19 @@ class PlantService(object):
         return plant
 
     @staticmethod
+    def update_plant(request, plant):
+        location = LocationService.get_or_create(request.data.get('location'), request.user)
+        plant_type = TypeService.get_or_create(request.data.get('type'), request.user)
+        plant.type = plant_type
+        plant.location = location
+        plant.name = request.data.get('name')
+        plant.image = request.data.get('image')
+        plant.owner = request.user
+        plant.description = request.data.get('description')
+        plant.save()
+        return plant
+
+    @staticmethod
     def all(user):
         plants = Plant.objects.filter(owner= user)
         return plants

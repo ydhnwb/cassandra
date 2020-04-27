@@ -100,3 +100,13 @@ class PlantViewSet(viewsets.ViewSet):
         PlantService.is_location_still_used(plant.location)
         PlantService.is_type_still_used(plant.type)
         return Response({'message': 'Success deleted', 'status': True, 'error': {}, 'data': {}})
+
+    def update(self, request, pk=None):
+        plant = PlantService.find_by_id(pk)
+        if not plant:
+            return Response({'message':'Plant not found', 'status':True, 'error':{}, 'data':{}})
+        serializer = PlantPlainSerializer(data = request.data)
+        if serializer.is_valid():
+            PlantService.update_plant(request, plant)
+            return Response({'message':'Success update', 'error':{}, 'status':True, 'data':serializer.data })
+        return Response({'message':'Failed update', 'status':False, 'error':{}, 'data':{}})
