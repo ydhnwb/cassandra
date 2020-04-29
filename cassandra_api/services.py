@@ -54,7 +54,7 @@ class PlantService(object):
     def is_type_still_used(plant_type):
         plants = PlantService.find_by_type(plant_type)
         if not plants.exists():
-            LocationService.destroy(plant_type.id)
+            TypeService.destroy(plant_type.id)
             return False
         return True
 
@@ -77,7 +77,8 @@ class LocationService:
 
     @staticmethod
     def destroy(location_id):
-        Location.objects.delete(id = location_id)
+        location = Location.objects.filter(id = location_id).first()
+        location.delete()
         return True
 
 class TypeService:
@@ -96,3 +97,9 @@ class TypeService:
             type_plant.save()
             return type_plant
         return type_plant
+
+    @staticmethod
+    def destroy(type_id):
+        plant_type = Type.objects.filter(id = type_id).first()
+        plant_type.delete()
+        return True

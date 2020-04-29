@@ -109,6 +109,10 @@ class PlantViewSet(viewsets.ViewSet):
         serializer = PlantPlainSerializer(data = request.data)
         if serializer.is_valid():
             self.check_object_permissions(request, plant)
+            location = plant.location
+            plant_type = plant.type
             PlantService.update_plant(request, plant)
+            PlantService.is_location_still_used(location)
+            PlantService.is_type_still_used(plant_type)
             return Response({'message':'Success update', 'error':{}, 'status':True, 'data':serializer.data })
         return Response({'message':'Failed update', 'status':False, 'error':{}, 'data':{}})
